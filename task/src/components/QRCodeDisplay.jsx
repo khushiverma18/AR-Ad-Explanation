@@ -1,101 +1,90 @@
-import React, { useState } from 'react';
-import { QRCodeCanvas } from 'qrcode.react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import QRCode from 'qrcode';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { RefreshCw, Download, Scan } from 'lucide-react';
 
-export default function QRCodeGenerator() {
-  const [url, setUrl] = useState('');
-  const [generated, setGenerated] = useState(false);
-  const [downloadUrl, setDownloadUrl] = useState('');
+const QRCodeGenerator = ({ onScan }) => {
+  const canvasRef = useRef(null);
+  const [qrData, setQrData] = useState('https://ar-experience.demo/scan/product-001');
 
-const handleGenerate = async () => {
-  if (!url) return;
-  setGenerated(true);
-  setDownloadUrl(url);
-
-  try {
-    await fetch('http://localhost:5000/api/analytics/record', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        campaignId: extractCampaignIdFromURL(url), // Customize based on how campaign ID is encoded
-        timeSpent: 0 // Optional or later calculated
-      }),
-    });
-    console.log('Scan recorded successfully');
-  } catch (err) {
-    console.error('Failed to record scan:', err);
-  }
-};
-
-  const handleDownload = () => {
-    const canvas = document.getElementById('qr-gen');
-    const pngUrl = canvas
-      .toDataURL('image/png')
-      .replace('image/png', 'image/octet-stream');
-    const downloadLink = document.createElement('a');
-    downloadLink.href = pngUrl;
-    downloadLink.download = 'qrcode.png';
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+  const generateQRCode = async () => {
+    if (canvasRef.current) {
+      try {
+        await QRCode.toCanvas(canvasRef.current, qrData, {
+          width: 256,
+          margin: 2,
+          color: {
+            dark: '#8B5CF6',
+            light: '#FFFFFF'
+          }
+        });
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+      }
+    }
   };
 
+  const downloadQR = () => {
+    if (canvasRef.current) {
+      const link = document.createElement('a');
+      link.download = 'ar-qr-code.png';
+      link.href = canvasRef.current.toDataURL();
+      link.click();
+    }
+  };
+
+  useEffect(() => {
+    generateQRCode();
+  }, [qrData]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="bg-black bg-opacity-60 backdrop-blur-md p-6 rounded-2xl shadow-xl w-full max-w-md mx-auto mt-10 text-white font-sans"
-    >
-      <h2 className="text-3xl font-bold mb-4 text-center tracking-wide">🚀 QR Code Generator</h2>
-
-      <motion.input
-        type="text"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="Enter URL to encode"
-        className="border border-white/20 bg-white/10 placeholder-white/70 text-white p-3 rounded-lg w-full mb-4 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-        whileFocus={{ scale: 1.03 }}
-      />
-
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        whileHover={{ scale: 1.03 }}
-        onClick={handleGenerate}
-        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition text-white px-4 py-2 rounded-lg w-full font-semibold shadow-lg"
-      >
-        Generate QR
-      </motion.button>
-
-      <AnimatePresence>
-        {generated && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mt-6 text-center"
-          >
-            <QRCodeCanvas
-              id="qr-gen"
-              value={url}
-              size={180}
-              level="H"
-              includeMargin={true}
+    <Card className="w-full max-w-md mx-auto bg-card/50 backdrop-blur-sm border-primary/20">
+      <CardHeader className="text-center">
+        <CardTitle className="gradient-text text-xl">AR QR Code</CardTitle>
+        <p className="text-muted-foreground text-sm">
+          Scan to trigger AR experience
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex justify-center">
+          <div className="relative p-4 bg-white rounded-lg shadow-lg">
+            <canvas 
+              ref={canvasRef} 
+              className="block ar-glow rounded-md"
             />
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              whileHover={{ scale: 1.05 }}
-              onClick={handleDownload}
-              className="bg-green-600 hover:bg-green-700 transition mt-4 text-white px-4 py-2 rounded-lg font-medium shadow-md"
-            >
-              Download PNG
-            </motion.button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+            <div className="absolute inset-0 border-2 border-secondary/30 rounded-lg pointer-events-none animate-pulse"></div>
+          </div>
+        </div>
+        
+        <div className="flex gap-2 justify-center">
+          <Button
+            variant="scan"
+            size="sm"
+            onClick={onScan}
+            className="flex-1"
+          >
+            <Scan className="w-4 h-4" />
+            Simulate Scan
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={generateQRCode}
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadQR}
+          >
+            <Download className="w-4 h-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+};
+
+export default QRCodeGenerator;
