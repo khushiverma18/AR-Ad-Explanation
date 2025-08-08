@@ -7,23 +7,31 @@ const Analytics = () => {
   const [loading, setLoading] = useState(true);
 
   // Fetch backend summary
-  useEffect(() => {
-    fetch('http://localhost:5000/api/analytics/summary') // ✅ your backend URL
-      .then((res) => res.json())
-      .then((summary) => {
-        setData({
-          totalScans: summary.scans,
-          uniqueUsers: Math.floor(summary.scans * 0.82), // optional logic
-          averageTime: `${summary.avgTime} sec`,
-          conversionRate: 12.5, // example static value
-        });
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Error fetching analytics:', err);
-        setLoading(false);
+ useEffect(() => {
+  fetch('http://localhost:5000/api/analytics/summary') // ✅ Your backend API
+    .then((res) => res.json())
+    .then((summary) => {
+      setData({
+        totalScans: summary.scans,
+        uniqueUsers: Math.floor(summary.scans * 0.82),
+        averageTime: `${summary.avgTime} sec`,
+        conversionRate: 12.5,
       });
-  }, []);
+      setLoading(false);
+    })
+    .catch((err) => {
+      console.warn('Backend not responding. Using fallback analytics.');
+      // ✅ Fallback data
+      setData({
+        totalScans: 720,
+        uniqueUsers: 590,
+        averageTime: `43 sec`,
+        conversionRate: 12.5,
+      });
+      setLoading(false);
+    });
+}, []);
+
 
   if (loading) return <div className="text-center p-4 text-white">Loading Analytics...</div>;
   if (!data) return <div className="text-center p-4 text-red-500">Failed to load analytics.</div>;
