@@ -10,17 +10,31 @@ const Index = () => {
   };
 
   const handleCTAClick = (action) => {
-    // Add CTA logic if needed
+    // Optional: Do something with the action
+    console.log('CTA clicked:', action);
+    // Close AR after a short delay
     setTimeout(() => handleARClose(), 1000);
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <ARViewer 
-        isActive={isARActive} 
-        onClose={handleARClose} 
-        onCTAClick={handleCTAClick} 
-      />
+    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+      {isARActive ? (
+        <ARViewer
+          isActive={isARActive}
+          onClose={handleARClose}
+          onCTAClick={handleCTAClick}
+        />
+      ) : (
+        <div className="text-center text-gray-400">
+          <p>AR session ended.</p>
+          <button
+            onClick={() => setIsARActive(true)}
+            className="mt-4 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg"
+          >
+            Restart AR
+          </button>
+        </div>
+      )}
     </div>
   );
 };

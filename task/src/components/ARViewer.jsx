@@ -1,71 +1,57 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState } from "react";
+import './AR.css'; // adjust path if needed
 
 export default function ARViewer() {
-  const [markerVisible, setMarkerVisible] = useState(false);
-  const videoRef = useRef(null);
-  const webcamRef = useRef(null);
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
-  // Start webcam
-  useEffect(() => {
-    async function startWebcam() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (webcamRef.current) {
-          webcamRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        console.error("Webcam error:", err);
-      }
-    }
-    startWebcam();
-  }, []);
+  const toggleVideo = () => {
+    setVideoPlaying(prev => !prev);
+  };
 
-  // This is just a manual toggle button to simulate marker detection for demo
-  const toggleMarker = () => {
-    setMarkerVisible(prev => !prev);
+  const handleClose = () => {
+    // Yahan apne link ya redirect ka logic daalo
+    window.location.href = "https://ar-ad-explanation-1.onrender.com"; // Example: home page pe redirect
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4">
-      <h1 className="text-xl mb-4">AR Experience (Demo)</h1>
+    <div className="ar-container">
+      <div className="ar-card">
+        <h1 className="ar-title">AR Experience</h1>
 
-      {/* Webcam preview */}
-      <video
-        ref={webcamRef}
-        autoPlay
-        muted
-        playsInline
-        className="w-[320px] h-[240px] rounded-lg border border-gray-600 mb-4"
-      />
+        {videoPlaying ? (
+          <div className="ar-video-wrapper">
+            <button 
+              onClick={handleClose} 
+              className="ar-close-btn" 
+              aria-label="Close AR experience"
+            >
+              &#x2715;
+            </button>
+            <video
+              src="https://www.w3schools.com/html/mov_bbb.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="ar-video"
+            />
+          </div>
+        ) : (
+          <div className="ar-placeholder">
+            <p className="ar-placeholder-text">Scan the target image to play the AR content.</p>
+          </div>
+        )}
 
-      {!markerVisible ? (
-        <div className="text-gray-400 mb-4">📷 Point your camera at the target image</div>
-      ) : (
-        <div className="w-[320px] h-[180px] bg-gray-800 flex items-center justify-center mb-4">
-          <video
-            ref={videoRef}
-            src="https://www.w3schools.com/html/mov_bbb.mp4"
-            autoPlay
-            loop
-            muted
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
+        <button
+          onClick={toggleVideo}
+          className="ar-cta-btn"
+          aria-label={videoPlaying ? "Stop video" : "Play video"}
+        >
+          {videoPlaying ? "Stop" : "Play"}
+        </button>
+      </div>
 
-      <button
-        onClick={toggleMarker}
-        className="mb-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg"
-      >
-        {markerVisible ? "Simulate Marker Lost" : "Simulate Marker Found"}
-      </button>
-
-      <a
-        href="#"
-        className="px-6 py-2 bg-green-500 hover:bg-green-600 rounded-lg"
-      >
-        Buy Now
-      </a>
+      <p className="ar-footer">Powered by WebAR &bull; Made with ♥</p>
     </div>
   );
 }
