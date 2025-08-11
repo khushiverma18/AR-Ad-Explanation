@@ -1,49 +1,40 @@
-// ARViewer.jsx
-import React, { useEffect, useRef } from "react";
-import * as THREE from "three";
-import { MindARThree } from "mind-ar/dist/mindar-image-three.prod.js";
+import React, { useState, useEffect } from "react";
 
-const ARViewer = () => {
-  const containerRef = useRef();
+export default function ARViewer() {
+  const [markerVisible, setMarkerVisible] = useState(false);
 
   useEffect(() => {
-    const startAR = async () => {
-      try {
-        const mindarThree = new MindARThree({
-          container: containerRef.current,
-          imageTargetSrc: "/targets.mind", // must be in public folder
-        });
-
-        const { renderer, scene, camera } = mindarThree;
-
-        // Basic AR content (cube)
-        const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-        const cube = new THREE.Mesh(geometry, material);
-
-        const anchor = mindarThree.addAnchor(0);
-        anchor.group.add(cube);
-
-        // Start AR only after ready
-        await mindarThree.start();
-
-        renderer.setAnimationLoop(() => {
-          renderer.render(scene, camera);
-        });
-      } catch (err) {
-        console.error("AR start error:", err);
-      }
-    };
-
-    startAR();
+    const interval = setInterval(() => {
+      // Simulate marker detection toggle every 5 seconds
+      setMarkerVisible(prev => !prev);
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ width: "100%", height: "100%", position: "relative" }}
-    />
-  );
-};
+    <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white">
+      <h1 className="text-xl mb-4">AR Experience</h1>
 
-export default ARViewer;
+      {!markerVisible ? (
+        <div className="text-gray-400">📷 Point your camera at the target image</div>
+      ) : (
+        <div className="w-[300px] h-[200px] bg-gray-800 flex items-center justify-center">
+          <video
+            src="https://www.w3schools.com/html/mov_bbb.mp4"
+            autoPlay
+            loop
+            muted
+            className="w-full h-full object-cover"
+          ></video>
+        </div>
+      )}
+
+      <a
+        href="#"
+        className="mt-4 px-6 py-2 bg-green-500 hover:bg-green-600 rounded-lg"
+      >
+        Buy Now
+      </a>
+    </div>
+  );
+}
