@@ -1,53 +1,49 @@
-import { useEffect, useRef } from "react";
-import { MindARThree } from "mind-ar/dist/mindar-image-three.prod.js";
+// ARViewer.jsx
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { MindARThree } from "mind-ar/dist/mindar-image-three.prod.js";
 
-export default function ARViewer() {
-  const containerRef = useRef(null);
+const ARViewer = () => {
+  const containerRef = useRef();
 
   useEffect(() => {
     const startAR = async () => {
-      const mindarThree = new MindARThree({
-        container: containerRef.current,
-        imageTargetSrc: "/targets/target.mind" // your trained target image file
-      });
+      try {
+        const mindarThree = new MindARThree({
+          container: containerRef.current,
+          imageTargetSrc: "/targets.mind", // must be in public folder
+        });
 
-      const { renderer, scene, camera } = mindarThree;
+        const { renderer, scene, camera } = mindarThree;
 
-      // Add a video or 3D model to play
-      const video = document.createElement("video");
-      video.src = "/ar-content.mp4";
-      video.crossOrigin = "anonymous";
-      video.loop = true;
+        // Basic AR content (cube)
+        const geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+        const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const cube = new THREE.Mesh(geometry, material);
 
-      const texture = new THREE.VideoTexture(video);
-      const geometry = new THREE.PlaneGeometry(1, 0.6);
-      const material = new THREE.MeshBasicMaterial({ map: texture });
-      const plane = new THREE.Mesh(geometry, material);
+        const anchor = mindarThree.addAnchor(0);
+        anchor.group.add(cube);
 
-      const anchor = mindarThree.addAnchor(0);
-      anchor.group.add(plane);
+        // Start AR only after ready
+        await mindarThree.start();
 
-      // Start AR session
-      await mindarThree.start();
-
-      // Event: Play video when target visible
-      anchor.onTargetFound = () => {
-        video.play();
-      };
-
-      // Event: Stop video when target lost
-      anchor.onTargetLost = () => {
-        video.pause();
-      };
-
-      renderer.setAnimationLoop(() => {
-        renderer.render(scene, camera);
-      });
+        renderer.setAnimationLoop(() => {
+          renderer.render(scene, camera);
+        });
+      } catch (err) {
+        console.error("AR start error:", err);
+      }
     };
 
     startAR();
   }, []);
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
-}
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: "100%", position: "relative" }}
+    />
+  );
+};
+
+export default ARViewer;
