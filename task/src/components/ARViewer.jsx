@@ -1,101 +1,53 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef } from "react";
+import { MindARThree } from "mind-ar/dist/mindar-image-three.prod.js";
+import * as THREE from "three";
 
-const ARViewer = () => {
-  const mountRef = useRef(null);
-  const [markerDetected, setMarkerDetected] = useState(false);
+export default function ARViewer() {
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    if (!markerDetected) return;
+    const startAR = async () => {
+      const mindarThree = new MindARThree({
+        container: containerRef.current,
+        imageTargetSrc: "/targets/target.mind" // your trained target image file
+      });
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+      const { renderer, scene, camera } = mindarThree;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-    camera.position.z = 3;
+      // Add a video or 3D model to play
+      const video = document.createElement("video");
+      video.src = "/ar-content.mp4";
+      video.crossOrigin = "anonymous";
+      video.loop = true;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
+      const texture = new THREE.VideoTexture(video);
+      const geometry = new THREE.PlaneGeometry(1, 0.6);
+      const material = new THREE.MeshBasicMaterial({ map: texture });
+      const plane = new THREE.Mesh(geometry, material);
 
-    // Cube geometry
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
+      const anchor = mindarThree.addAnchor(0);
+      anchor.group.add(plane);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
-    scene.add(ambientLight, directionalLight);
+      // Start AR session
+      await mindarThree.start();
 
-    // Animation loop
-    const animate = () => {
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
+      // Event: Play video when target visible
+      anchor.onTargetFound = () => {
+        video.play();
+      };
+
+      // Event: Stop video when target lost
+      anchor.onTargetLost = () => {
+        video.pause();
+      };
+
+      renderer.setAnimationLoop(() => {
+        renderer.render(scene, camera);
+      });
     };
 
-    animate();
+    startAR();
+  }, []);
 
-    return () => {
-      mountRef.current.removeChild(renderer.domElement);
-      renderer.dispose();
-    };
-  }, [markerDetected]);
-
-  return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      {/* Fake camera background */}
-      {!markerDetected && (
-        <div
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            background: `url('https://i.ibb.co/zP8sN6W/camera-bg.jpg') center center / cover no-repeat`,
-            zIndex: 1,
-          }}
-        />
-      )}
-
-      {/* Three.js canvas */}
-      <div
-        ref={mountRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          zIndex: 2,
-          position: 'relative',
-        }}
-      />
-
-      {/* Scan/Detect button */}
-      {!markerDetected && (
-        <button
-          onClick={() => setMarkerDetected(true)}
-          style={{
-            position: 'absolute',
-            top: 20,
-            left: 20,
-            zIndex: 3,
-            padding: '12px 20px',
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: 'bold',
-          }}
-        >
-          Simulate QR Scan
-        </button>
-      )}
-    </div>
-  );
-};
-
-export default ARViewer;
+  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+}
